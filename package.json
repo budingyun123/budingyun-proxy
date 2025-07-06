@@ -1,0 +1,21 @@
+{
+  "name": "budingyun-proxy",
+  "version": "1.0.0",
+  "description": "V2bX 代理服务 - 通过 jsDelivr CDN 解决大陆访问问题",
+  "main": "proxy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "v2bx",
+    "proxy",
+    "jsdelivr",
+    "cdn"
+  ],
+  "author": "budingyun123",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/budingyun123/budingyun-proxy.git"
+  }
+}
