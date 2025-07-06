@@ -1,35 +1,46 @@
 // XBoard 智能代理配置文件
 const CONFIG = {
-  // 目标服务器配置
-  TARGET_HOST: 'budingyun.com',
-  TARGET_PORT: 443,
-  USE_HTTPS: true,
+  // 主服务器配置
+  PRIMARY: {
+    host: 'budingyun.com',
+    port: 443,
+    protocol: 'https',
+    weight: 10,
+    region: 'origin'
+  },
   
-  // 备用节点配置（智能负载均衡）
-  BACKUP_HOSTS: [
-    { host: 'cdn.jsdelivr.net', weight: 10, region: 'global' },
-    { host: 'fastly.jsdelivr.net', weight: 8, region: 'global' },
-    { host: 'gcore.jsdelivr.net', weight: 6, region: 'asia' },
-    { host: 'testingcf.jsdelivr.net', weight: 5, region: 'global' },
-    { host: 'quantil.jsdelivr.net', weight: 4, region: 'europe' }
+  // 备用服务器配置（智能负载均衡）
+  FALLBACK_HOSTS: [
+    { host: 'cdn.jsdelivr.net', port: 443, protocol: 'https', weight: 9, region: 'global' },
+    { host: 'fastly.jsdelivr.net', port: 443, protocol: 'https', weight: 8, region: 'global' },
+    { host: 'gcore.jsdelivr.net', port: 443, protocol: 'https', weight: 7, region: 'asia' },
+    { host: 'testingcf.jsdelivr.net', port: 443, protocol: 'https', weight: 6, region: 'global' },
+    { host: 'quantil.jsdelivr.net', port: 443, protocol: 'https', weight: 5, region: 'europe' }
   ],
   
-  // XBoard 特定 API 端点
-  API_ENDPOINTS: {
-    auth: '/api/v1/passport/auth',
-    login: '/api/v1/passport/auth/login',
-    register: '/api/v1/passport/auth/register',
-    user: '/api/v1/user',
-    admin: '/api/v1/admin',
-    order: '/api/v1/user/order',
-    server: '/api/v1/user/server',
-    stat: '/api/v1/stat',
-    config: '/api/v1/user/getSubscribe',
-    payment: '/api/v1/user/order/checkout',
-    notice: '/api/v1/user/notice',
-    ticket: '/api/v1/user/ticket',
-    knowledge: '/api/v1/user/knowledge',
-    coupon: '/api/v1/user/coupon'
+  // XBoard API 路由配置
+  API_ROUTES: {
+    // 认证相关
+    auth: { path: '/api/v1/passport/auth', cacheable: false, priority: 'high' },
+    login: { path: '/api/v1/passport/auth/login', cacheable: false, priority: 'high' },
+    register: { path: '/api/v1/passport/auth/register', cacheable: false, priority: 'high' },
+    
+    // 用户相关
+    user: { path: '/api/v1/user', cacheable: true, priority: 'high', ttl: 300 },
+    userOrder: { path: '/api/v1/user/order', cacheable: false, priority: 'medium' },
+    userServer: { path: '/api/v1/user/server', cacheable: true, priority: 'high', ttl: 600 },
+    userSubscribe: { path: '/api/v1/user/getSubscribe', cacheable: true, priority: 'high', ttl: 300 },
+    
+    // 系统相关
+    guestConfig: { path: '/api/v1/guest/comm/config', cacheable: true, priority: 'medium', ttl: 1800 },
+    stat: { path: '/api/v1/stat', cacheable: true, priority: 'low', ttl: 300 },
+    
+    // 其他功能
+    payment: { path: '/api/v1/user/order/checkout', cacheable: false, priority: 'high' },
+    notice: { path: '/api/v1/user/notice', cacheable: true, priority: 'low', ttl: 600 },
+    ticket: { path: '/api/v1/user/ticket', cacheable: false, priority: 'medium' },
+    knowledge: { path: '/api/v1/user/knowledge', cacheable: true, priority: 'low', ttl: 3600 },
+    coupon: { path: '/api/v1/user/coupon', cacheable: true, priority: 'medium', ttl: 300 }
   },
   
   // 健康检查配置
@@ -38,20 +49,25 @@ const CONFIG = {
     interval: 300000, // 5分钟
     timeout: 10000,   // 10秒
     retryCount: 3,
-    endpoints: ['/api/v1/guest/comm/config', '/ping', '/health', '/api/v1/stat']
+    endpoints: ['/api/v1/guest/comm/config', '/ping', '/health']
   },
   
-  // 性能优化配置
+  // 缓存配置
+  CACHE: {
+    enabled: true,
+    defaultTTL: 300000, // 5分钟
+    maxSize: 1000,      // 最大缓存条目数
+    cleanupInterval: 600000, // 10分钟清理一次
+    compressionEnabled: true
+  },
+  
+  // 性能配置
   PERFORMANCE: {
-    enableCache: true,
-    cacheTimeout: 300000, // 5分钟
-    enableCompression: true,
     maxConcurrentRequests: 10,
     requestTimeout: 30000, // 30秒
-    retryAttempts: 3,
-    retryDelay: 1000,
-    enableAutoProxy: false, // 是否自动代理所有请求
-    enablePreload: true     // 是否预加载关键资源
+    retryDelay: 1000,      // 重试延迟
+    connectionPoolSize: 20,
+    keepAliveTimeout: 60000
   },
   
   // 安全配置
@@ -64,8 +80,7 @@ const CONFIG = {
       'https://localhost'
     ],
     rateLimitPerMinute: 100,
-    enableRequestSigning: false,
-    blockSuspiciousRequests: true
+    enableSRI: true // 子资源完整性检查
   },
   
   // 调试配置
